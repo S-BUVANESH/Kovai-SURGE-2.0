@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let greenPoints = 0;
     let recycledItems = 0;
     let wasteReduced = 0;
+    const pendingRewardKey = `surge_pending_reward_${user.uid}`;
 
     const rewards = [
         { name: 'Eco-Friendly Tote Bag', cost: 500, img: 'https://images.unsplash.com/photo-1591534461839-8e36e3a49717?w=400&h=300&fit=crop' },
@@ -15,48 +16,90 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'Reusable Water Bottle', cost: 2000, img: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=300&fit=crop' }
     ];
 
+    function getPendingReward() {
+        try {
+            return JSON.parse(localStorage.getItem(pendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+        } catch (e) {
+            return { points: 0, recycledItems: 0, wasteReduced: 0 };
+        }
+    }
+
+    async function flushPendingReward() {
+        const pending = getPendingReward();
+        if (!pending || (!pending.points && !pending.recycledItems && !pending.wasteReduced)) return;
+        try {
+            await SurgeDB.applyCitizenReportReward(user.uid, user.email, pending);
+            localStorage.removeItem(pendingRewardKey);
+        } catch (e) {
+            console.warn('[SURGE] Pending reward sync still pending', e);
+        }
+    }
+
+    function renderBadge() {
+        if (greenPoints >= 1000) {
+            document.getElementById('badge-name').textContent = 'GREEN CHAMPION';
+            document.getElementById('badge-progress').style.width = '100%';
+            document.querySelector('#badge-progress + p').textContent = 'Max badge reached!';
+        } else if (greenPoints >= 500) {
+            document.getElementById('badge-name').textContent = 'ECO-WARRIOR';
+            const progress = Math.round(((greenPoints - 500) / 500) * 100);
+            document.getElementById('badge-progress').style.width = progress + '%';
+            document.querySelector('#badge-progress + p').textContent = `${progress}% to Green Champion`;
+        } else {
+            document.getElementById('badge-name').textContent = 'NEWCOMER';
+            const progress = Math.round((greenPoints / 500) * 100);
+            document.getElementById('badge-progress').style.width = progress + '%';
+            document.querySelector('#badge-progress + p').textContent = `${progress}% to Eco-Warrior`;
+        }
+    }
+
     // --- INIT ---
     async function init() {
         const userName = user.email.split('@')[0];
         document.getElementById('user-display-name').textContent = user.email;
         document.getElementById('welcome-message').textContent = `Welcome back, ${userName}!`;
-        
-        // Load REAL user data from Firestore
-        try {
-            const userData = await SurgeDB.getUser(user.uid);
-            if (userData) {
-                greenPoints = userData.greenPoints || 0;
-                recycledItems = userData.recycledItems || 0;
-                wasteReduced = userData.wasteReduced || 0;
+        let hasFirestoreStats = false;
 
-                // Badge based on actual points
-                if (greenPoints >= 1000) {
-                    document.getElementById('badge-name').textContent = 'GREEN CHAMPION 🌳';
-                    document.getElementById('badge-progress').style.width = '100%';
-                    document.querySelector('#badge-progress + p').textContent = 'Max badge reached!';
-                } else if (greenPoints >= 500) {
-                    document.getElementById('badge-name').textContent = 'ECO-WARRIOR 🌿';
-                    const progress = Math.round(((greenPoints - 500) / 500) * 100);
-                    document.getElementById('badge-progress').style.width = progress + '%';
-                    document.querySelector('#badge-progress + p').textContent = `${progress}% to Green Champion`;
-                } else {
-                    document.getElementById('badge-name').textContent = 'NEWCOMER 🌱';
-                    const progress = Math.round((greenPoints / 500) * 100);
-                    document.getElementById('badge-progress').style.width = progress + '%';
-                    document.querySelector('#badge-progress + p').textContent = `${progress}% to Eco-Warrior`;
-                }
+        try {
+            let userData = await SurgeDB.getUser(user.uid);
+            if (!userData) {
+                userData = await SurgeDB.getUserByEmail(user.email);
+            }
+            if (userData) {
+                greenPoints = Number(userData.greenPoints || 0);
+                recycledItems = Number(userData.recycledItems || 0);
+                wasteReduced = Number(userData.wasteReduced || 0);
+                hasFirestoreStats = true;
             }
         } catch (e) {
-            console.log('[SURGE] Loading user data from Firestore failed, showing defaults');
+            console.log('[SURGE] Loading user data from Firestore failed, using fallback');
         }
 
-        // Load real notifications from Firestore reports
+        const pending = getPendingReward();
+        if (pending) {
+            greenPoints += Number(pending.points || 0);
+            recycledItems += Number(pending.recycledItems || 0);
+            wasteReduced += Number(pending.wasteReduced || 0);
+        }
+        renderBadge();
+        flushPendingReward();
+
+        // Fallback: if user stats doc is missing, derive baseline points from submitted reports.
+        if (!hasFirestoreStats) {
+            try {
+                const reports = await SurgeDB.getReports();
+                const myReports = reports.filter(r => (r.reportedBy || '').toLowerCase() === user.email.toLowerCase());
+                const derivedPoints = myReports.length * 25;
+                if (derivedPoints > greenPoints) greenPoints = derivedPoints;
+            } catch (e) {
+                console.log('[SURGE] Fallback report-based points unavailable');
+            }
+        }
+
         await loadRealNotifications();
-
-        // Set real upcoming collection date (next Thursday)
         setUpcomingCollection();
-
         updateDashboardStats();
+        updatePointsBalance();
         renderRewards();
         setupEventListeners();
     }
@@ -189,6 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         animateValue('stat-recycled', 0, recycledItems, 1000);
         animateValue('stat-reduced', 0, wasteReduced, 1000);
         animateValue('stat-points', 0, greenPoints, 1000);
+        updatePointsBalance();
         
         // Change labels based on real data
         document.getElementById('stat-recycled-change').textContent = recycledItems > 0 ? 'Keep recycling!' : 'Start recycling to earn GP';
@@ -241,3 +285,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     init();
 });
+
+

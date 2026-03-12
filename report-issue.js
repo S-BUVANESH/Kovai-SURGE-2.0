@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const user = SurgeAuth.checkAuth('citizen');
+    if (!user) return;
     const form = document.getElementById('issue-form');
     const locationInput = document.getElementById('issue-location');
     const suggestionsBox = document.getElementById('location-suggestions');
@@ -8,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedLocation = null;
     let selectedIndex = -1;
     let currentSuggestions = [];
+    const pendingRewardKey = `surge_pending_reward_${user.uid}`;
 
     // --- Toast ---
     function showToast(message, type = 'success') {
@@ -15,6 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.textContent = message;
         toast.className = `toast ${type} show`;
         setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    function queuePendingReward(reward) {
+        try {
+            const existing = JSON.parse(localStorage.getItem(pendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+            const merged = {
+                points: (existing.points || 0) + (reward.points || 0),
+                recycledItems: (existing.recycledItems || 0) + (reward.recycledItems || 0),
+                wasteReduced: (existing.wasteReduced || 0) + (reward.wasteReduced || 0),
+                email: user.email,
+            };
+            localStorage.setItem(pendingRewardKey, JSON.stringify(merged));
+        } catch (e) {
+            console.warn('[SURGE] Pending reward queue failed', e);
+        }
     }
 
     // --- Location Autocomplete (OpenStreetMap Nominatim) ---
@@ -181,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const issueType = document.getElementById('issue-type').value;
         const location = locationInput.value;
         const comments = document.getElementById('issue-comments').value;
-        const userEmail = sessionStorage.getItem('userEmail') || 'anonymous';
+        const userEmail = user.email || sessionStorage.getItem('userEmail') || 'anonymous';
 
         if (!location) {
             showToast('Please search and select a location.', 'error');
@@ -208,7 +226,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             await SurgeDB.submitReport(reportData);
-            showToast('Report submitted successfully! 🎉');
+            const reward = { points: 25, recycledItems: 1, wasteReduced: 2 };
+            let rewardSynced = true;
+            try {
+                await SurgeDB.applyCitizenReportReward(user.uid, userEmail, reward);
+            } catch (rewardError) {
+                rewardSynced = false;
+                queuePendingReward(reward);
+                console.warn('[SURGE] Reward sync delayed, queued locally', rewardError);
+            }
+            showToast(rewardSynced ? 'Report submitted! +25 GP credited.' : 'Report submitted. +25 GP queued for sync.');
             btn.textContent = 'Submitted! ✓';
             btn.style.background = 'rgba(83,210,45,0.2)';
             btn.style.color = '#53d22d';
@@ -223,3 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
+
+

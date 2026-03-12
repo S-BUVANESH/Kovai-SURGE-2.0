@@ -40,15 +40,43 @@ const SurgeDB = {
         return doc.exists ? { id: doc.id, ...doc.data() } : null;
     },
 
+    async getUserByEmail(email) {
+        const safeEmail = (email || '').trim().toLowerCase();
+        if (!safeEmail) return null;
+        const snapshot = await db.collection('users').where('email', '==', safeEmail).limit(1).get();
+        if (snapshot.empty) return null;
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
+    },
+
     async getWorkers() {
         const snapshot = await db.collection('users').where('role', '==', 'worker').get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     },
 
     async updateUserPoints(uid, points) {
-        await db.collection('users').doc(uid).update({
-            greenPoints: firebase.firestore.FieldValue.increment(points)
-        });
+        await db.collection('users').doc(uid).set({
+            greenPoints: firebase.firestore.FieldValue.increment(points),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    },
+
+    async applyCitizenReportReward(uid, email, reward = {}) {
+        const points = Number.isFinite(Number(reward.points)) ? Number(reward.points) : 25;
+        const recycledItems = Number.isFinite(Number(reward.recycledItems)) ? Number(reward.recycledItems) : 1;
+        const wasteReduced = Number.isFinite(Number(reward.wasteReduced)) ? Number(reward.wasteReduced) : 2;
+        const safeEmail = (email || '').trim().toLowerCase();
+
+        await db.collection('users').doc(uid).set({
+            email: safeEmail || null,
+            role: 'citizen',
+            name: safeEmail ? safeEmail.split('@')[0] : 'citizen',
+            greenPoints: firebase.firestore.FieldValue.increment(points),
+            recycledItems: firebase.firestore.FieldValue.increment(recycledItems),
+            wasteReduced: firebase.firestore.FieldValue.increment(wasteReduced),
+            lastReportRewardAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
     },
 
     // ---- REPORTS ----
