@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Register | KOVAI~SURGE</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: { colors: { "primary": "#4CAF50", "background-dark": "#0a0f0a" }, fontFamily: { "display": ["Space Grotesk", "sans-serif"] } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link href="surge-effects.css" rel="stylesheet"/>
+    <style>
+        .login-bg { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 50%, #0d1f0d 0%, #050a05 70%, #000 100%); overflow: hidden; }
+        .login-bg::before { content: ''; position: absolute; inset: -50%; background-image: linear-gradient(rgba(76,175,80,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(76,175,80,0.06) 1px, transparent 1px); background-size: 50px 50px; animation: gridMove 20s linear infinite; }
+        @keyframes gridMove { 0% { transform: translate(0,0); } 100% { transform: translate(50px,50px); } }
+        .glass-card { background: rgba(10,20,10,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(76,175,80,0.15); box-shadow: 0 0 40px rgba(76,175,80,0.05), 0 25px 50px rgba(0,0,0,0.5); }
+        .neon-input { background: rgba(0,0,0,0.6) !important; border: 1px solid rgba(76,175,80,0.2) !important; color: #ffffff !important; caret-color: #4CAF50; transition: all 0.3s ease; -webkit-appearance: none; appearance: none; }
+        .neon-input::placeholder { color: #555 !important; }
+        .neon-input:focus { background: rgba(0,0,0,0.7) !important; border-color: #4CAF50 !important; box-shadow: 0 0 15px rgba(76,175,80,0.2), inset 0 0 15px rgba(76,175,80,0.05); color: #ffffff !important; }
+        .glow-btn { background: linear-gradient(135deg, #4CAF50, #2E7D32); transition: all 0.3s; }
+        .glow-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(76,175,80,0.4); }
+        .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.68,-0.55,0.27,1.55); }
+        .toast.show { transform: translateX(0); }
+        .toast.error { background: rgba(250,75,56,0.9); color: white; }
+        .toast.success { background: rgba(76,175,80,0.9); color: white; }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp 0.6s ease forwards; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="font-display">
+    <div class="login-bg"></div>
+    <div id="toast" class="toast"></div>
+
+    <div class="relative flex h-screen w-full flex-col justify-center items-center p-4 z-10">
+        <div class="glass-card rounded-2xl max-w-md w-full p-8 fade-up">
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center mb-3" style="filter: drop-shadow(0 0 15px rgba(76,175,80,0.4));">
+                    <span class="material-symbols-outlined text-primary text-4xl">person_add</span>
+                </div>
+                <h1 class="text-white text-2xl font-bold tracking-wider">Citizen Registration</h1>
+                <p class="text-primary text-sm tracking-widest mt-1">JOIN THE MOVEMENT</p>
+            </div>
+            
+            <form id="registerForm" class="flex flex-col gap-4">
+                <label class="flex flex-col gap-1.5">
+                    <p class="text-gray-400 text-sm font-medium flex items-center gap-2"><span class="material-symbols-outlined text-sm text-primary/60">badge</span>Full Name</p>
+                    <input id="fullName" class="neon-input rounded-lg text-white h-11 px-4 text-sm outline-none w-full placeholder:text-gray-600" placeholder="Enter your full name" type="text" required/>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <p class="text-gray-400 text-sm font-medium flex items-center gap-2"><span class="material-symbols-outlined text-sm text-primary/60">mail</span>Email Address</p>
+                    <input id="emailInput" class="neon-input rounded-lg text-white h-11 px-4 text-sm outline-none w-full placeholder:text-gray-600" placeholder="Enter your @gmail.com address" type="email" required/>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <p class="text-gray-400 text-sm font-medium flex items-center gap-2"><span class="material-symbols-outlined text-sm text-primary/60">lock</span>Password</p>
+                    <input id="passwordInput" class="neon-input rounded-lg text-white h-11 px-4 text-sm outline-none w-full placeholder:text-gray-600" placeholder="Create a password (min 6 chars)" type="password" required/>
+                </label>
+                <label class="flex flex-col gap-1.5">
+                    <p class="text-gray-400 text-sm font-medium flex items-center gap-2"><span class="material-symbols-outlined text-sm text-primary/60">verified_user</span>Confirm Password</p>
+                    <input id="confirmPasswordInput" class="neon-input rounded-lg text-white h-11 px-4 text-sm outline-none w-full placeholder:text-gray-600" placeholder="Confirm your password" type="password" required/>
+                </label>
+                
+                <button id="registerBtn" type="submit" class="glow-btn rounded-lg h-12 text-white text-base font-bold tracking-wide mt-2 flex items-center justify-center gap-2">
+                    <span id="registerText">Register</span>
+                    <span id="registerSpinner" class="material-symbols-outlined spinner hidden">progress_activity</span>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-500 text-sm">Already have an account? <a class="text-primary hover:underline font-semibold" href="index.html">Login Here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth.js"></script>
+    <script src="citizen-register.js"></script>
+    <script src="surge-effects.js"></script>
+</body>
+</html>

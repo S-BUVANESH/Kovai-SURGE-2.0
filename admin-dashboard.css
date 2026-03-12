@@ -1,0 +1,209 @@
+/* ============================================================
+   KOVAI~SURGE Admin Dashboard - Enhanced Styles
+   ============================================================ */
+
+/* ---- Modal ---- */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: none; place-items: center;
+    z-index: 100;
+}
+.modal-overlay.active { display: grid; }
+.modal-content {
+    background: #111a11;
+    border: 1px solid rgba(83, 210, 45, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+/* ---- Navigation ---- */
+.nav-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: #a5b6a0;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
+}
+.nav-link:hover {
+    color: #fff;
+    background: rgba(83, 210, 45, 0.05);
+    border-color: rgba(83, 210, 45, 0.1);
+}
+.nav-link.active {
+    color: #53d22d;
+    background: rgba(83, 210, 45, 0.08);
+    border-color: rgba(83, 210, 45, 0.2);
+    box-shadow: 0 0 15px rgba(83, 210, 45, 0.05);
+}
+.nav-link .material-symbols-outlined { font-size: 20px; }
+
+/* ---- LIVE Badge ---- */
+.live-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(250, 75, 56, 0.15);
+    color: #fa4b38;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(250, 75, 56, 0.3);
+    letter-spacing: 0.1em;
+}
+.live-dot {
+    width: 6px; height: 6px;
+    background: #fa4b38;
+    border-radius: 50%;
+    animation: livePulse 2s ease-in-out infinite;
+    box-shadow: 0 0 6px #fa4b38;
+}
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ---- Glass Panel ---- */
+.glass-panel {
+    background: rgba(17, 26, 17, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(83, 210, 45, 0.1);
+    border-radius: 14px;
+    transition: border-color 0.3s;
+}
+.glass-panel:hover { border-color: rgba(83, 210, 45, 0.2); }
+
+/* ---- KPI Cards ---- */
+.kpi-card {
+    background: rgba(17, 26, 17, 0.6);
+    border: 1px solid rgba(83, 210, 45, 0.08);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, transparent, #53d22d, transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.kpi-card:hover { border-color: rgba(83, 210, 45, 0.2); transform: translateY(-2px); }
+.kpi-card:hover::before { opacity: 1; }
+.kpi-card.warning { border-color: rgba(250, 157, 56, 0.2); }
+.kpi-card.warning::before { background: linear-gradient(90deg, transparent, #fa9d38, transparent); }
+.kpi-card.danger { border-color: rgba(250, 75, 56, 0.2); }
+.kpi-card.danger::before { background: linear-gradient(90deg, transparent, #fa4b38, transparent); }
+.kpi-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+.kpi-icon .material-symbols-outlined { font-size: 20px; }
+.kpi-label { color: #a5b6a0; font-size: 12px; font-weight: 500; letter-spacing: 0.03em; }
+.kpi-value { font-size: 28px; font-weight: 800; color: #fff; line-height: 1; }
+.kpi-change { font-size: 12px; font-weight: 600; margin-top: auto; }
+.kpi-change.positive { color: #53d22d; }
+.kpi-change.warning-text { color: #fa9d38; }
+.kpi-change.danger-text { color: #fa4b38; }
+
+/* ---- Chart Bars ---- */
+.chart-bar {
+    background: linear-gradient(to top, rgba(83, 210, 45, 0.2), rgba(83, 210, 45, 0.4));
+    width: 100%; border-radius: 4px 4px 0 0;
+    transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+}
+.chart-bar:hover { background: linear-gradient(to top, rgba(83, 210, 45, 0.3), rgba(83, 210, 45, 0.6)); }
+.chart-bar.highlight { background: linear-gradient(to top, rgba(83, 210, 45, 0.5), #53d22d); box-shadow: 0 0 10px rgba(83, 210, 45, 0.3); }
+.chart-label { font-size: 12px; font-weight: 700; color: #a5b6a0; }
+.chart-label.highlight-text { color: #53d22d; }
+
+/* ---- Page Titles ---- */
+.page-title { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: 0.02em; }
+.page-subtitle { font-size: 14px; color: #a5b6a0; margin-top: 4px; }
+
+/* ---- Action Button ---- */
+.action-button {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    background: rgba(83, 210, 45, 0.1);
+    border: 1px solid rgba(83, 210, 45, 0.3);
+    border-radius: 10px;
+    color: #53d22d;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.action-button:hover {
+    background: #53d22d;
+    color: #0c1a0c;
+    box-shadow: 0 0 20px rgba(83, 210, 45, 0.3);
+}
+
+/* ---- Table ---- */
+.table-container {
+    background: rgba(17, 26, 17, 0.5);
+    border: 1px solid rgba(83, 210, 45, 0.08);
+    border-radius: 14px;
+    overflow: hidden;
+}
+table { border-collapse: collapse; }
+th {
+    text-align: left; padding: 14px 16px;
+    background: rgba(83, 210, 45, 0.05);
+    color: #a5b6a0; font-size: 12px;
+    font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(83, 210, 45, 0.1);
+}
+td {
+    padding: 14px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+tr:hover td { background: rgba(83, 210, 45, 0.02); }
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.status-badge.online { background: rgba(83, 210, 45, 0.15); color: #53d22d; }
+.status-badge.offline { background: rgba(255, 255, 255, 0.08); color: #666; }
+
+/* ---- Report Card ---- */
+.report-card {
+    background: rgba(17, 26, 17, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 20px;
+    transition: all 0.3s;
+}
+.report-card:hover {
+    border-color: rgba(83, 210, 45, 0.2);
+    transform: translateY(-2px);
+}
+.report-card h3 { font-size: 15px; font-weight: 700; color: #fff; }
+.report-card .location { color: #a5b6a0; }
+
+/* ---- Leaflet Map Overrides ---- */
+.leaflet-container { background: #0c1a0c !important; border-radius: 0 0 12px 12px; }
+.leaflet-control-zoom a { background: #111a11 !important; color: #53d22d !important; border-color: rgba(83,210,45,0.2) !important; }
+.leaflet-control-attribution { background: rgba(12, 26, 12, 0.8) !important; color: #a5b6a0 !important; font-size: 10px !important; }
+
+/* ---- Page Visibility ---- */
+.page { display: none; }
+.page.active { display: block; animation: pageIn 0.3s ease; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

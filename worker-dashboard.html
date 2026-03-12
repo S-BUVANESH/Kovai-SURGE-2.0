@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Worker Dashboard | KOVAI~SURGE</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: { colors: { "primary": "#53d22d", "background-dark": "#0c1a0c" }, fontFamily: { "display": ["Space Grotesk", "sans-serif"] } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link href="surge-effects.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="worker-dashboard.css">
+</head>
+<body class="bg-background-dark font-display text-white">
+<div class="flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="flex-shrink-0 bg-[#0a120a] p-4 flex justify-between items-center border-b border-primary/10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary text-xl">engineering</span>
+            </div>
+            <div>
+                <p id="connection-status" class="text-xs font-bold text-primary flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary inline-block" style="box-shadow:0 0 6px #53d22d;"></span> ONLINE
+                </p>
+                <h1 id="user-display-name" class="text-sm font-bold">Loading...</h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="add-priority-bin" class="header-btn" title="Add Priority Bin">
+                <span class="material-symbols-outlined text-amber-400 text-xl">add_alert</span>
+            </button>
+            <button id="logout-button" class="header-btn" title="Logout">
+                <span class="material-symbols-outlined text-red-400 text-xl">logout</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col min-h-0">
+        <!-- ROUTE PAGE -->
+        <div id="route-page" class="page active flex flex-col h-full">
+            <div class="relative flex-grow">
+                <div id="worker-map" class="absolute inset-0"></div>
+            </div>
+            <div class="flex-shrink-0 bg-[#0c1a0c] p-4 rounded-t-2xl border-t-2 border-primary/30" style="box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">route</span>
+                        Today's Route
+                    </h2>
+                    <span id="route-progress" class="text-primary font-bold text-sm bg-primary/10 px-3 py-1 rounded-full">(0/0)</span>
+                </div>
+                <div id="route-list-container" class="space-y-2 max-h-56 overflow-y-auto pr-1 custom-scroll"></div>
+            </div>
+        </div>
+
+        <!-- REPORT PAGE -->
+        <div id="report-page" class="page hidden p-6">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">report</span>
+                Report an Issue
+            </h2>
+            <form id="issue-form" class="space-y-5">
+                <div>
+                    <label for="issue-type" class="block text-xs font-bold text-[#a5b6a0] mb-2 tracking-wider uppercase">Type of Issue</label>
+                    <select id="issue-type" class="form-input">
+                        <option>Bin Damaged</option>
+                        <option>Access Blocked</option>
+                        <option>Contaminated Waste</option>
+                        <option>Illegal Dumping Nearby</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="bin-id" class="block text-xs font-bold text-[#a5b6a0] mb-2 tracking-wider uppercase">Bin ID (optional)</label>
+                    <input type="text" id="bin-id" class="form-input" placeholder="e.g., bin_001">
+                </div>
+                <div>
+                    <label for="comments" class="block text-xs font-bold text-[#a5b6a0] mb-2 tracking-wider uppercase">Description</label>
+                    <textarea id="comments" rows="4" class="form-input" placeholder="Describe the issue in detail..."></textarea>
+                </div>
+                <button type="submit" class="w-full h-12 px-6 bg-primary text-background-dark font-bold rounded-xl transition-all hover:shadow-[0_0_20px_rgba(83,210,45,0.3)]">Submit Report</button>
+            </form>
+        </div>
+
+        <!-- PROFILE PAGE -->
+        <div id="profile-page" class="page hidden p-6 text-center">
+            <div class="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center mb-4" style="box-shadow:0 0 30px rgba(83,210,45,0.15);">
+                <span class="material-symbols-outlined text-primary text-5xl">engineering</span>
+            </div>
+            <h2 id="profile-email" class="text-xl font-bold"></h2>
+            <p class="text-[#a5b6a0] text-sm font-medium tracking-wider">FIELD OPERATOR</p>
+            <div class="grid grid-cols-2 gap-3 mt-8">
+                <div class="stat-card"><p>Bins Collected</p><span id="stat-bins">0</span></div>
+                <div class="stat-card"><p>Route Progress</p><span id="stat-progress">0%</span></div>
+                <div class="stat-card"><p>Issues Reported</p><span id="stat-issues">0</span></div>
+                <div class="stat-card"><p>On-duty</p><span>Active</span></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="flex-shrink-0 bg-[#0a120a] border-t border-primary/10">
+        <div class="flex justify-around">
+            <a class="nav-link active" href="#" data-page="route-page"><span class="material-symbols-outlined">map</span><p>Route</p></a>
+            <a class="nav-link" href="#" data-page="report-page"><span class="material-symbols-outlined">report</span><p>Report</p></a>
+            <a class="nav-link" href="#" data-page="profile-page"><span class="material-symbols-outlined">person</span><p>Profile</p></a>
+        </div>
+    </nav>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script src="db.js"></script>
+<script src="worker-dashboard.js"></script>
+<script src="surge-effects.js"></script>
+</body>
+</html>

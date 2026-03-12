@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Citizen Dashboard | KOVAI~SURGE</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: { colors: { "primary": "#53d22d", "background-dark": "#0c1a0c", "card-bg": "#111a11" }, fontFamily: { "display": ["Space Grotesk", "sans-serif"] } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet"/>
+    <link href="surge-effects.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="citizen-dashboard.css">
+</head>
+<body class="bg-background-dark font-display text-white">
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="flex w-64 flex-col bg-[#0a120a] border-r border-primary/10">
+        <div class="flex flex-col h-full p-4">
+            <div class="flex gap-3 items-center p-2 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-xl">person</span>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <h1 id="user-display-name" class="text-white text-sm font-medium truncate">Loading...</h1>
+                    <p class="text-primary/60 text-xs font-medium tracking-wider">CITIZEN</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 bg-amber-500/10 rounded-xl border border-amber-500/20 mb-4">
+                <span class="material-symbols-outlined text-amber-400 text-lg">local_police</span>
+                <span id="badge-name" class="text-amber-400 text-xs font-bold tracking-wider">ECO-WARRIOR</span>
+            </div>
+            <div class="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent my-2"></div>
+            <nav id="sidebar-nav" class="flex flex-col gap-1">
+                <a class="nav-link active" href="#" data-page="my-impact-page"><span class="material-symbols-outlined">eco</span><p>My Impact</p></a>
+                <a class="nav-link" href="report-issue.html"><span class="material-symbols-outlined">report</span><p>Report an Issue</p></a>
+                <a class="nav-link" href="#" data-page="redeem-page"><span class="material-symbols-outlined">store</span><p>Redeem Points</p></a>
+                <a class="nav-link" href="segregation-guide.html"><span class="material-symbols-outlined">recycling</span><p>Segregation Guide</p></a>
+            </nav>
+            <div class="mt-auto flex flex-col gap-3">
+                <div class="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+                <button id="logout-button" class="w-full h-10 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl font-bold text-sm transition-all hover:bg-red-500/20 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">logout</span>Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 lg:p-8 overflow-y-auto">
+        <!-- MY IMPACT PAGE -->
+        <div id="my-impact-page" class="page active">
+            <header class="fade-in">
+                <p class="text-3xl font-black tracking-wide">My Impact</p>
+                <p id="welcome-message" class="text-[#a5b6a0] mt-1">Welcome back!</p>
+            </header>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <!-- Next Collection Hero -->
+                    <div class="hero-card fade-in">
+                        <div class="flex items-start gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                                <span class="material-symbols-outlined text-primary text-3xl">calendar_month</span>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-primary/60 tracking-widest mb-1">UPCOMING COLLECTION</p>
+                                <p class="text-xl font-bold">Thursday, 16 Oct — 8:00 AM</p>
+                                <p class="text-[#a5b6a0] mt-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-primary text-sm">recycling</span>
+                                    Recyclable Waste — Ensure proper segregation
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="fade-in" style="animation-delay:200ms;">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">notifications_active</span>
+                            Recent Activity
+                        </h2>
+                        <div id="notifications-container" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- Stats Column -->
+                <div class="flex flex-col gap-4 fade-in" style="animation-delay:100ms;">
+                    <h2 class="text-xl font-bold">My Contribution</h2>
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <p>Recycled Items</p>
+                            <span class="material-symbols-outlined text-primary text-lg">recycling</span>
+                        </div>
+                        <span id="stat-recycled" class="text-2xl font-black text-white mt-2">0</span>
+                        <p id="stat-recycled-change" class="stat-change"></p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <p>Waste Reduced</p>
+                            <span class="material-symbols-outlined text-primary text-lg">trending_down</span>
+                        </div>
+                        <span id="stat-reduced" class="text-2xl font-black text-white mt-2">0 kg</span>
+                        <p id="stat-reduced-change" class="stat-change"></p>
+                    </div>
+                    <div class="stat-card gold-glow">
+                        <div class="flex items-center justify-between">
+                            <p>Green Points</p>
+                            <span class="material-symbols-outlined text-amber-400 text-lg">stars</span>
+                        </div>
+                        <span id="stat-points" class="text-2xl font-black text-amber-400 mt-2">0</span>
+                        <p id="stat-points-change" class="stat-change text-amber-400/60"></p>
+                    </div>
+
+                    <!-- Badge Progress -->
+                    <div class="stat-card">
+                        <p class="text-xs font-bold tracking-wider text-[#a5b6a0] mb-2">BADGE PROGRESS</p>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">🌱</span>
+                            <span class="text-sm font-bold">→</span>
+                            <span class="text-lg">🌿</span>
+                            <span class="text-sm font-bold">→</span>
+                            <span class="text-lg">🌳</span>
+                        </div>
+                        <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div id="badge-progress" class="h-full bg-gradient-to-r from-primary to-amber-400 rounded-full transition-all duration-1000" style="width:65%;"></div>
+                        </div>
+                        <p class="text-xs text-[#a5b6a0] mt-1">65% to next badge</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REDEEM PAGE -->
+        <div id="redeem-page" class="page hidden">
+            <h2 class="text-2xl font-black">Redeem Green Points</h2>
+            <div class="mt-6 p-6 bg-gradient-to-r from-amber-500/10 to-primary/10 rounded-2xl flex items-center justify-between border border-amber-500/20">
+                <div>
+                    <p class="text-amber-400 font-bold text-sm tracking-wider">YOUR BALANCE</p>
+                    <p class="text-3xl font-black text-white mt-1"><span id="points-balance">0</span> <span class="text-amber-400">GP</span></p>
+                </div>
+                <span class="material-symbols-outlined text-amber-400 text-5xl" style="filter:drop-shadow(0 0 10px rgba(245,158,11,0.3));">savings</span>
+            </div>
+            <div id="rewards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8"></div>
+        </div>
+    </main>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script src="db.js"></script>
+<script src="citizen-dashboard.js"></script>
+<script src="surge-effects.js"></script>
+</body>
+</html>

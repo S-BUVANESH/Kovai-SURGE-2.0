@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>SURGE Command Center</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary": "#53d22d", "background-dark": "#0c1a0c", "card-bg": "#111a11" }, fontFamily: { "display": ["Space Grotesk", "sans-serif"] } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link href="surge-effects.css" rel="stylesheet"/>
+    <!-- Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body class="bg-background-dark font-display text-white">
+
+<!-- Logout Modal -->
+<div id="logout-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-[#fa9d38] text-4xl">warning</span>
+                <h2 class="text-2xl font-bold">Confirm Logout</h2>
+            </div>
+            <p class="text-[#a5b6a0]">Are you sure you want to logout from the SURGE Command Center?</p>
+            <div class="flex gap-3 mt-4">
+                <button id="confirm-logout" class="flex-1 bg-[#fa4b38] hover:bg-[#d93d2a] text-white font-medium py-2 px-4 rounded-lg transition-all">Logout</button>
+                <button id="cancel-logout" class="flex-1 bg-[#1a2a1a] hover:bg-[#253525] text-white font-medium py-2 px-4 rounded-lg border border-white/10 transition-all">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#0a120a] flex-shrink-0 border-r border-primary/10">
+        <div class="flex h-full flex-col justify-between p-4">
+            <div>
+                <div class="flex items-center gap-3 p-2 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary text-xl">shield_person</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <h1 id="user-display-name" class="text-white text-sm font-medium truncate">Loading...</h1>
+                        <p class="text-primary/60 text-xs font-medium tracking-wider">ADMINISTRATOR</p>
+                    </div>
+                </div>
+                <div class="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent my-3"></div>
+                <nav id="sidebar-nav" class="flex flex-col gap-1">
+                    <a class="nav-link active" href="#" data-page="dashboard-page"><span class="material-symbols-outlined">dashboard</span><p>Dashboard</p></a>
+                    <a class="nav-link" href="#" data-page="live-tracking-page"><span class="material-symbols-outlined">location_on</span><p>Live Tracking</p></a>
+                    <a class="nav-link" href="#" data-page="analytics-page"><span class="material-symbols-outlined">analytics</span><p>Analytics & Reports</p></a>
+                    <a class="nav-link" href="#" data-page="worker-management-page"><span class="material-symbols-outlined">groups</span><p>Worker Management</p></a>
+                    <a class="nav-link" href="#" data-page="citizen-reports-page"><span class="material-symbols-outlined">report</span><p>Citizen Reports</p></a>
+                </nav>
+            </div>
+            <div class="flex flex-col gap-1">
+                <div class="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent my-2"></div>
+                <a class="nav-link" href="#"><span class="material-symbols-outlined">settings</span><p>Settings</p></a>
+                <a id="logout-button" class="nav-link cursor-pointer" href="#"><span class="material-symbols-outlined">logout</span><p>Logout</p></a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 lg:p-8 overflow-y-auto">
+        
+        <!-- DASHBOARD PAGE -->
+        <div id="dashboard-page" class="page active">
+            <header class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <p class="text-white text-3xl font-black tracking-wide">SURGE Command Center</p>
+                        <span class="live-badge">
+                            <span class="live-dot"></span>LIVE
+                        </span>
+                    </div>
+                    <p class="text-[#a5b6a0] mt-1">Real-time overview of waste management operations — Coimbatore</p>
+                </div>
+                <button id="seed-data-btn" class="action-button text-xs" title="Load Demo Data">
+                    <span class="material-symbols-outlined text-sm">database</span>Seed Demo Data
+                </button>
+            </header>
+
+            <!-- KPI Cards -->
+            <section id="kpi-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-primary/10 text-primary"><span class="material-symbols-outlined">delete</span></div>
+                    <p class="kpi-label">Total Waste Collected</p>
+                    <span id="kpi-waste" class="kpi-value">--</span>
+                    <p class="kpi-change positive">Loading...</p>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-primary/10 text-primary"><span class="material-symbols-outlined">recycling</span></div>
+                    <p class="kpi-label">City Recycling Rate</p>
+                    <span id="kpi-recycle" class="kpi-value">--</span>
+                    <p class="kpi-change positive">Loading...</p>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-icon bg-amber-500/10 text-amber-400"><span class="material-symbols-outlined">warning</span></div>
+                    <p class="kpi-label">Bins Requiring Attention</p>
+                    <span id="kpi-attention" class="kpi-value text-amber-400">--</span>
+                    <p class="kpi-change warning-text">Loading...</p>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-blue-500/10 text-blue-400"><span class="material-symbols-outlined">local_shipping</span></div>
+                    <p class="kpi-label">Active Collection Trucks</p>
+                    <span id="kpi-trucks" class="kpi-value text-blue-400">--</span>
+                    <p class="kpi-change">Loading...</p>
+                </div>
+                <div class="kpi-card danger">
+                    <div class="kpi-icon bg-red-500/10 text-red-400"><span class="material-symbols-outlined">flag</span></div>
+                    <p class="kpi-label">Open Citizen Reports</p>
+                    <span id="kpi-reports" class="kpi-value text-red-400">--</span>
+                    <p class="kpi-change danger-text">Loading...</p>
+                </div>
+            </section>
+
+            <!-- Map + Chart Row -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <div class="lg:col-span-2 glass-panel p-1">
+                    <div class="flex items-center justify-between px-4 py-3">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">map</span>
+                            Live Bin & Truck Map
+                        </h3>
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>Low</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>Medium</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>Critical</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>Truck</span>
+                        </div>
+                    </div>
+                    <div id="dashboard-map" style="height: 400px; border-radius: 0 0 12px 12px;"></div>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="glass-panel p-6 h-full">
+                        <p class="text-base font-bold mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-xl">bar_chart</span>
+                            Waste by Zone
+                        </p>
+                        <div id="bar-chart-container" class="grid min-h-[200px] grid-flow-col gap-4 grid-rows-[1fr_auto] items-end justify-items-center px-3 mt-4">
+                            <div class="chart-bar" style="height: 40%;"></div><p class="chart-label">A</p>
+                            <div class="chart-bar" style="height: 70%;"></div><p class="chart-label">B</p>
+                            <div class="chart-bar" style="height: 80%;"></div><p class="chart-label">C</p>
+                            <div class="chart-bar highlight" style="height: 90%;"></div><p class="chart-label highlight-text">D</p>
+                            <div class="chart-bar" style="height: 60%;"></div><p class="chart-label">E</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- LIVE TRACKING PAGE (Full Map) -->
+        <div id="live-tracking-page" class="page hidden">
+            <header>
+                <div class="flex items-center gap-3">
+                    <p class="page-title">Live Tracking</p>
+                    <span class="live-badge"><span class="live-dot"></span>REAL-TIME</span>
+                </div>
+                <p class="page-subtitle">Monitor all bins and trucks with GPS precision.</p>
+            </header>
+            <div class="glass-panel p-1 mt-6">
+                <div id="full-map" style="height: calc(100vh - 200px); border-radius: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS PAGE -->
+        <div id="analytics-page" class="page hidden">
+            <header><p class="page-title">Analytics & Reports</p><p class="page-subtitle">Deep dive into operational data and generate reports.</p></header>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="glass-panel p-6 h-96">
+                    <p class="text-lg font-medium flex items-center gap-2"><span class="material-symbols-outlined text-primary">show_chart</span>Waste Collected Over Time</p>
+                    <div class="h-full w-full text-center text-[#a5b6a0] flex items-center justify-center text-sm">Connect to Firebase Analytics for time-series data</div>
+                </div>
+                <div class="glass-panel p-6 h-96">
+                    <p class="text-lg font-medium flex items-center gap-2"><span class="material-symbols-outlined text-primary">speed</span>Collection Efficiency by Vehicle</p>
+                    <div class="h-full w-full text-center text-[#a5b6a0] flex items-center justify-center text-sm">Real-time efficiency tracking enabled</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WORKER MANAGEMENT PAGE -->
+        <div id="worker-management-page" class="page hidden">
+            <header class="flex justify-between items-center">
+                <div><p class="page-title">Worker Management</p><p class="page-subtitle">Oversee and manage all field operators.</p></div>
+                <button class="action-button"><span class="material-symbols-outlined">add</span>Add Worker</button>
+            </header>
+            <div class="table-container mt-6">
+                <table class="w-full">
+                    <thead><tr><th>Operator</th><th>Status</th><th>Vehicle ID</th><th>Route</th><th>Efficiency</th></tr></thead>
+                    <tbody id="worker-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CITIZEN REPORTS PAGE -->
+        <div id="citizen-reports-page" class="page hidden">
+            <header><p class="page-title">Citizen Reports</p><p class="page-subtitle">Address and manage issues reported by citizens.</p></header>
+            <div id="citizen-reports-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"></div>
+        </div>
+    </main>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+<script src="db.js"></script>
+<script src="admin-dashboard.js"></script>
+<script src="surge-effects.js"></script>
+</body>
+</html>

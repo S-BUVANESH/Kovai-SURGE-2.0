@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Waste Segregation Guide | KOVAI~SURGE</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: { "primary": "#53d22d", "background-dark": "#0c1a0c" }, fontFamily: { "display": ["Space Grotesk", "sans-serif"] } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet"/>
+    <link href="surge-effects.css" rel="stylesheet"/>
+    <style>
+        .waste-card {
+            background: rgba(10, 20, 10, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .waste-card.organic { border-color: rgba(83, 210, 45, 0.3); }
+        .waste-card.recyclable { border-color: rgba(59, 130, 246, 0.3); }
+        .waste-card.hazardous { border-color: rgba(250, 75, 56, 0.3); }
+
+        .card-header {
+            padding: 24px;
+            display: gap-4;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .organic .card-header { background: radial-gradient(circle at top right, rgba(83, 210, 45, 0.2), transparent 70%); }
+        .recyclable .card-header { background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.2), transparent 70%); }
+        .hazardous .card-header { background: radial-gradient(circle at top right, rgba(250, 75, 56, 0.2), transparent 70%); }
+
+        .icon-box {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .organic .icon-box { background: rgba(83, 210, 45, 0.1); color: #53d22d; border: 1px solid rgba(83, 210, 45, 0.3); }
+        .recyclable .icon-box { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .hazardous .icon-box { background: rgba(250, 75, 56, 0.1); color: #fa4b38; border: 1px solid rgba(250, 75, 56, 0.3); }
+
+        .list-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #d1d5db;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .list-icon { font-size: 18px; margin-top: 2px; }
+        .organic .list-icon { color: #53d22d; }
+        .recyclable .list-icon { color: #3b82f6; }
+        .hazardous .list-icon { color: #fa4b38; }
+        
+        .stays-out .list-icon { color: rgba(250, 75, 56, 0.8) !important; font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="bg-background-dark font-display text-white overflow-x-hidden">
+
+<main class="p-6 lg:p-12 max-w-7xl mx-auto relative z-10">
+    <a href="citizen-dashboard.html" class="inline-flex items-center gap-2 text-primary hover:text-white transition-colors text-sm font-medium mb-8 fade-up btn-premium px-4 py-2 rounded-lg bg-primary/10 border border-primary/20 cursor-pointer">
+        <span class="material-symbols-outlined text-sm">arrow_back</span> Return to Connect
+    </a>
+
+    <header class="text-center mb-16 fade-up fade-up-delay-1">
+        <p class="text-amber-400 font-bold tracking-widest text-sm mb-3">PROTOCOL OMEGA</p>
+        <h1 class="text-4xl md:text-5xl font-black mb-4 holo-shimmer" style="display:inline-block;">Waste Segregation Guide</h1>
+        <p class="text-[#a5b6a0] max-w-2xl mx-auto text-lg">Proper segregation is the first step towards a cleaner city. Use this protocol to sort waste correctly and earn Green Points.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+        
+        <!-- Organic Card -->
+        <div class="waste-card organic card-3d glass-pro fade-up fade-up-delay-2">
+            <div class="card-header flex gap-4">
+                <div class="icon-box"><span class="material-symbols-outlined">compost</span></div>
+                <div>
+                    <h2 class="text-xl font-black text-white">Organic</h2>
+                    <p class="text-[#53d22d] font-bold text-xs tracking-wider">WET WASTE</p>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-[#a5b6a0] text-sm mb-6">Biodegradable waste originating from plants or animals.</p>
+                
+                <h3 class="text-white font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[#53d22d] text-sm">check_circle</span> APPROVED ITEMS</h3>
+                <div class="mb-6">
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">nutrition</span><span>Fruit & Vegetable Peels</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">restaurant</span><span>Leftover / Spoiled Food</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">local_cafe</span><span>Egg Shells & Tea Bags</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">forest</span><span>Garden Waste (leaves, twigs)</span></div>
+                </div>
+
+                <h3 class="text-[#fa4b38] font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-sm">cancel</span> STRICTLY PROHIBITED</h3>
+                <div>
+                    <div class="list-item stays-out"><span class="material-symbols-outlined list-icon">close</span><span>Any Plastics or Polythene</span></div>
+                    <div class="list-item stays-out"><span class="material-symbols-outlined list-icon">close</span><span>Food Packaging / Wrappers</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recyclable Card -->
+        <div class="waste-card recyclable card-3d glass-pro fade-up fade-up-delay-3">
+            <div class="card-header flex gap-4">
+                <div class="icon-box"><span class="material-symbols-outlined">recycling</span></div>
+                <div>
+                    <h2 class="text-xl font-black text-white">Recyclable</h2>
+                    <p class="text-[#3b82f6] font-bold text-xs tracking-wider">DRY WASTE</p>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-[#a5b6a0] text-sm mb-6">Clean, dry materials that can be reprocessed into new products.</p>
+                
+                <h3 class="text-white font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[#3b82f6] text-sm">check_circle</span> APPROVED ITEMS</h3>
+                <div class="mb-6">
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">water_bottle</span><span>Plastics Bottles & Clean Containers</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">feed</span><span>Paper, Newspapers & Cardboard</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">liquor</span><span>Glass Bottles & Jars</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">local_drink</span><span>Metal Cans (Tin, Aluminum, Steel)</span></div>
+                </div>
+
+                <h3 class="text-[#fa4b38] font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-sm">cancel</span> STRICTLY PROHIBITED</h3>
+                <div>
+                    <div class="list-item stays-out"><span class="material-symbols-outlined list-icon">close</span><span>Soiled Food Boxes (e.g., greasy pizza boxes)</span></div>
+                    <div class="list-item stays-out"><span class="material-symbols-outlined list-icon">close</span><span>Styrofoam cups/plates</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hazardous Card -->
+        <div class="waste-card hazardous card-3d glass-pro fade-up fade-up-delay-4">
+            <div class="card-header flex gap-4">
+                <div class="icon-box"><span class="material-symbols-outlined">warning</span></div>
+                <div>
+                    <h2 class="text-xl font-black text-white">Hazardous</h2>
+                    <p class="text-[#fa4b38] font-bold text-xs tracking-wider">TOXIC & E-WASTE</p>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-[#a5b6a0] text-sm mb-6">Dangerous materials that require specialized disposal. Never mix with regular bins.</p>
+                
+                <h3 class="text-white font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[#fa4b38] text-sm">check_circle</span> APPROVED FOR THIS BIN</h3>
+                <div class="mb-6">
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">battery_charging_full</span><span>Batteries & E-Waste</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">format_paint</span><span>Leftover Paints & Solvents</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">lightbulb</span><span>Light Bulbs (CFLs, Tube Lights)</span></div>
+                    <div class="list-item"><span class="material-symbols-outlined list-icon">medication</span><span>Expired Medicines & Syringes</span></div>
+                </div>
+
+                <h3 class="text-[#fa4b38] font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-sm">cancel</span> STRICTLY PROHIBITED</h3>
+                <div>
+                    <div class="list-item stays-out"><span class="material-symbols-outlined list-icon">close</span><span>Mixing with regular trash</span></div>
+                    <div class="list-item stays-out"><span class="material-symbols-outlined list-icon">close</span><span>Dumping in drains or soil</span></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script src="surge-effects.js"></script>
+</body>
+</html>
