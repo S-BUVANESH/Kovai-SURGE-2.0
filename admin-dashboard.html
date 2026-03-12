@@ -60,6 +60,22 @@
             </div>
             <div class="flex flex-col gap-1">
                 <div class="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent my-2"></div>
+                <div class="px-2 py-1">
+                    <label for="theme-selector" class="text-[11px] tracking-wider uppercase" style="color: var(--theme-muted);">Theme</label>
+                    <select id="theme-selector" class="theme-selector mt-1 w-full">
+                        <option value="military">Military</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="ember">Ember</option>
+                        <option value="violet">Violet</option>
+                    </select>
+                </div>
+                <div class="px-2 py-1">
+                    <label for="mode-selector" class="text-[11px] tracking-wider uppercase" style="color: var(--theme-muted);">Mode</label>
+                    <select id="mode-selector" class="theme-selector mt-1 w-full">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
                 <a class="nav-link" href="#"><span class="material-symbols-outlined">settings</span><p>Settings</p></a>
                 <a id="logout-button" class="nav-link cursor-pointer" href="#"><span class="material-symbols-outlined">logout</span><p>Logout</p></a>
             </div>
@@ -81,9 +97,14 @@
                     </div>
                     <p class="text-[#a5b6a0] mt-1">Real-time overview of waste management operations — Coimbatore</p>
                 </div>
-                <button id="seed-data-btn" class="action-button text-xs" title="Load Demo Data">
-                    <span class="material-symbols-outlined text-sm">database</span>Seed Demo Data
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="seed-data-btn" class="action-button text-xs" title="Load Demo Data">
+                        <span class="material-symbols-outlined text-sm">database</span>Seed Demo Data
+                    </button>
+                    <button id="clear-seed-data-btn" class="action-button text-xs" title="Remove Seeded Data">
+                        <span class="material-symbols-outlined text-sm">delete_sweep</span>Remove Seeded Data
+                    </button>
+                </div>
             </header>
 
             <!-- KPI Cards -->
@@ -172,14 +193,40 @@
         <!-- ANALYTICS PAGE -->
         <div id="analytics-page" class="page hidden">
             <header><p class="page-title">Analytics & Reports</p><p class="page-subtitle">Deep dive into operational data and generate reports.</p></header>
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-primary/10 text-primary"><span class="material-symbols-outlined">delete</span></div>
+                    <p class="kpi-label">Tracked Bins</p>
+                    <span id="analytics-bins" class="kpi-value">--</span>
+                    <p class="kpi-change positive">Live</p>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-icon bg-amber-500/10 text-amber-400"><span class="material-symbols-outlined">warning</span></div>
+                    <p class="kpi-label">Critical Fill</p>
+                    <span id="analytics-critical" class="kpi-value text-amber-400">--</span>
+                    <p class="kpi-change warning-text">Needs action</p>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-blue-500/10 text-blue-400"><span class="material-symbols-outlined">local_shipping</span></div>
+                    <p class="kpi-label">Active Trucks</p>
+                    <span id="analytics-trucks" class="kpi-value text-blue-400">--</span>
+                    <p class="kpi-change">Realtime</p>
+                </div>
+                <div class="kpi-card danger">
+                    <div class="kpi-icon bg-red-500/10 text-red-400"><span class="material-symbols-outlined">report</span></div>
+                    <p class="kpi-label">Open Reports</p>
+                    <span id="analytics-reports" class="kpi-value text-red-400">--</span>
+                    <p class="kpi-change danger-text">Citizen input</p>
+                </div>
+            </section>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 <div class="glass-panel p-6 h-96">
                     <p class="text-lg font-medium flex items-center gap-2"><span class="material-symbols-outlined text-primary">show_chart</span>Waste Collected Over Time</p>
-                    <div class="h-full w-full text-center text-[#a5b6a0] flex items-center justify-center text-sm">Connect to Firebase Analytics for time-series data</div>
+                    <div id="analytics-waste-chart" class="h-full w-full flex items-end gap-2 pt-8 pb-10 px-2"></div>
                 </div>
                 <div class="glass-panel p-6 h-96">
                     <p class="text-lg font-medium flex items-center gap-2"><span class="material-symbols-outlined text-primary">speed</span>Collection Efficiency by Vehicle</p>
-                    <div class="h-full w-full text-center text-[#a5b6a0] flex items-center justify-center text-sm">Real-time efficiency tracking enabled</div>
+                    <div id="analytics-efficiency-list" class="h-full w-full overflow-y-auto mt-3 pr-1"></div>
                 </div>
             </div>
         </div>
@@ -218,3 +265,5 @@
 <script src="surge-effects.js"></script>
 </body>
 </html>
+
+

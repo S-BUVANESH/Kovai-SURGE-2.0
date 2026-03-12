@@ -11,6 +11,27 @@
     --surge-card: rgba(10, 20, 10, 0.6);
 }
 
+:root[data-theme="ocean"] {
+    --surge-green: #22d3ee;
+    --surge-green-glow: rgba(34, 211, 238, 0.4);
+    --surge-dark: #071621;
+    --surge-card: rgba(8, 24, 34, 0.62);
+}
+
+:root[data-theme="ember"] {
+    --surge-green: #f97316;
+    --surge-green-glow: rgba(249, 115, 22, 0.4);
+    --surge-dark: #1c0f08;
+    --surge-card: rgba(34, 16, 8, 0.62);
+}
+
+:root[data-theme="violet"] {
+    --surge-green: #a78bfa;
+    --surge-green-glow: rgba(167, 139, 250, 0.4);
+    --surge-dark: #110d1f;
+    --surge-card: rgba(19, 14, 34, 0.62);
+}
+
 /* ---- Dynamic Ambient Lighting Orbs ---- */
 .ambient-orb {
     position: fixed;

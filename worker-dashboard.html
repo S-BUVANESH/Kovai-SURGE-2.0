@@ -57,7 +57,11 @@
                         <span class="material-symbols-outlined text-primary">route</span>
                         Today's Route
                     </h2>
-                    <span id="route-progress" class="text-primary font-bold text-sm bg-primary/10 px-3 py-1 rounded-full">(0/0)</span>
+                    <div class="flex items-center gap-2">
+                        <button id="optimize-route-btn" class="collect-btn !px-3 !py-1.5">Optimize</button>
+                        <button id="open-route-btn" class="collect-btn !px-3 !py-1.5">Open Route</button>
+                        <span id="route-progress" class="text-primary font-bold text-sm bg-primary/10 px-3 py-1 rounded-full">(0/0)</span>
+                    </div>
                 </div>
                 <div id="route-list-container" class="space-y-2 max-h-56 overflow-y-auto pr-1 custom-scroll"></div>
             </div>
@@ -69,6 +73,10 @@
                 <span class="material-symbols-outlined text-primary">report</span>
                 Report an Issue
             </h2>
+            <div class="mb-6">
+                <h3 class="text-sm font-bold tracking-wider text-[#a5b6a0] uppercase mb-2">Citizen Reports Queue</h3>
+                <div id="open-reports-container" class="space-y-2 max-h-44 overflow-y-auto pr-1 custom-scroll"></div>
+            </div>
             <form id="issue-form" class="space-y-5">
                 <div>
                     <label for="issue-type" class="block text-xs font-bold text-[#a5b6a0] mb-2 tracking-wider uppercase">Type of Issue</label>

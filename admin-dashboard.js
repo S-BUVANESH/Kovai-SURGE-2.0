@@ -3,6 +3,105 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = SurgeAuth.checkAuth('admin');
     if (!user) return;
     document.getElementById('user-display-name').textContent = user.email;
+    const themeSelector = document.getElementById('theme-selector');
+    const modeSelector = document.getElementById('mode-selector');
+    const rootStyle = document.documentElement.style;
+    let dashboardMap = null, fullMap = null;
+    let dashboardTileLayer = null, fullTileLayer = null;
+    const themePalettes = {
+        military: {
+            accent: '#53d22d',
+            accentRgb: '83, 210, 45',
+            darkBg: '#0c1a0c',
+            darkSidebar: '#0a120a',
+            darkCard: '#111a11',
+            darkMuted: '#a5b6a0',
+            lightBg: '#edf3ee',
+            lightSidebar: '#e2ebe3',
+            lightCard: '#ffffff',
+            lightMuted: '#4f6357',
+        },
+        ocean: {
+            accent: '#22d3ee',
+            accentRgb: '34, 211, 238',
+            darkBg: '#071621',
+            darkSidebar: '#06111a',
+            darkCard: '#0c1f2b',
+            darkMuted: '#9cb6c6',
+            lightBg: '#e8f6fb',
+            lightSidebar: '#d9eef5',
+            lightCard: '#ffffff',
+            lightMuted: '#405d6d',
+        },
+        ember: {
+            accent: '#f97316',
+            accentRgb: '249, 115, 22',
+            darkBg: '#1c0f08',
+            darkSidebar: '#160b06',
+            darkCard: '#28140b',
+            darkMuted: '#c6a794',
+            lightBg: '#fbf1ea',
+            lightSidebar: '#f6e4d8',
+            lightCard: '#ffffff',
+            lightMuted: '#6e5546',
+        },
+        violet: {
+            accent: '#a78bfa',
+            accentRgb: '167, 139, 250',
+            darkBg: '#110d1f',
+            darkSidebar: '#0d0a16',
+            darkCard: '#1a1430',
+            darkMuted: '#b9abd8',
+            lightBg: '#f2effc',
+            lightSidebar: '#e8e1fb',
+            lightCard: '#ffffff',
+            lightMuted: '#5b4e79',
+        }
+    };
+
+    function syncAppearance() {
+        const theme = document.documentElement.getAttribute('data-theme') || 'military';
+        const mode = document.documentElement.getAttribute('data-mode') || 'dark';
+        const palette = themePalettes[theme] || themePalettes.military;
+        const isLight = mode === 'light';
+        rootStyle.setProperty('--theme-accent', palette.accent);
+        rootStyle.setProperty('--theme-accent-rgb', palette.accentRgb);
+        rootStyle.setProperty('--theme-bg', isLight ? palette.lightBg : palette.darkBg);
+        rootStyle.setProperty('--theme-sidebar', isLight ? palette.lightSidebar : palette.darkSidebar);
+        rootStyle.setProperty('--theme-card', isLight ? palette.lightCard : palette.darkCard);
+        rootStyle.setProperty('--theme-muted', isLight ? palette.lightMuted : palette.darkMuted);
+    }
+
+    function applyWebsiteTheme(themeKey) {
+        const allowed = ['military', 'ocean', 'ember', 'violet'];
+        const selected = allowed.includes(themeKey) ? themeKey : 'military';
+        document.documentElement.setAttribute('data-theme', selected);
+        localStorage.setItem('surge_admin_theme', selected);
+        syncAppearance();
+        if (themeSelector && themeSelector.value !== selected) {
+            themeSelector.value = selected;
+        }
+    }
+
+    function applyWebsiteMode(modeKey) {
+        const selected = modeKey === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-mode', selected);
+        localStorage.setItem('surge_admin_mode', selected);
+        syncAppearance();
+        syncMapTheme();
+        if (modeSelector && modeSelector.value !== selected) {
+            modeSelector.value = selected;
+        }
+    }
+
+    applyWebsiteTheme(localStorage.getItem('surge_admin_theme') || 'military');
+    applyWebsiteMode(localStorage.getItem('surge_admin_mode') || 'dark');
+    if (themeSelector) {
+        themeSelector.addEventListener('change', (e) => applyWebsiteTheme(e.target.value));
+    }
+    if (modeSelector) {
+        modeSelector.addEventListener('change', (e) => applyWebsiteMode(e.target.value));
+    }
 
     // --- 2. LOGOUT MODAL ---
     const logoutButton = document.getElementById('logout-button');
@@ -40,12 +139,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetPageId === 'live-tracking-page' && !fullMap) {
                 initFullMap();
             }
+            if (targetPageId === 'worker-management-page') {
+                populateWorkerManagement();
+            }
+            if (targetPageId === 'analytics-page') {
+                renderAnalytics(latestBins, latestTrucks, latestReports, latestWorkers);
+            }
         });
     });
 
     // --- 4. LEAFLET MAP INITIALIZATION ---
     const COIMBATORE = [11.0168, 76.9558];
-    let dashboardMap, fullMap;
     let binMarkers = {}, truckMarkers = {}, reportMarkers = {};
     let binMarkersF = {}, truckMarkersF = {}, reportMarkersF = {};
 
@@ -92,22 +196,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Dark tile layer
-    const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    const tileAttrib = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+    function getTileConfig() {
+        const isLight = (document.documentElement.getAttribute('data-mode') || 'dark') === 'light';
+        return {
+            tileUrl: isLight
+                ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+            tileAttrib: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        };
+    }
+
+    function syncMapTheme() {
+        const { tileUrl, tileAttrib } = getTileConfig();
+        if (dashboardMap) {
+            if (dashboardTileLayer) dashboardMap.removeLayer(dashboardTileLayer);
+            dashboardTileLayer = L.tileLayer(tileUrl, { attribution: tileAttrib, subdomains: 'abcd', maxZoom: 19 }).addTo(dashboardMap);
+        }
+        if (fullMap) {
+            if (fullTileLayer) fullMap.removeLayer(fullTileLayer);
+            fullTileLayer = L.tileLayer(tileUrl, { attribution: tileAttrib, subdomains: 'abcd', maxZoom: 19 }).addTo(fullMap);
+        }
+    }
 
     // Store latest data for full map initialization
     let latestBins = [];
     let latestTrucks = [];
     let latestReports = [];
+    let latestWorkers = [];
 
     // Initialize dashboard mini-map
     dashboardMap = L.map('dashboard-map', { zoomControl: true, scrollWheelZoom: true }).setView(COIMBATORE, 13);
-    L.tileLayer(tileUrl, { attribution: tileAttrib, subdomains: 'abcd', maxZoom: 19 }).addTo(dashboardMap);
+    syncMapTheme();
 
     function initFullMap() {
         fullMap = L.map('full-map', { zoomControl: true, scrollWheelZoom: true }).setView(COIMBATORE, 13);
-        L.tileLayer(tileUrl, { attribution: tileAttrib, subdomains: 'abcd', maxZoom: 19 }).addTo(fullMap);
+        syncMapTheme();
         
         // Populate immediately if data exists
         if (latestBins.length) updateMapMarkers(latestBins, fullMap, binMarkersF);
@@ -211,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMapMarkers(bins, dashboardMap, binMarkers);
         if (fullMap) updateMapMarkers(bins, fullMap, binMarkersF);
         updateKPIs(bins);
+        renderAnalytics(latestBins, latestTrucks, latestReports, latestWorkers);
     });
 
     // Listen for real-time truck updates
@@ -219,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTruckMarkers(trucks, dashboardMap, truckMarkers);
         if (fullMap) updateTruckMarkers(trucks, fullMap, truckMarkersF);
         document.getElementById('kpi-trucks').textContent = trucks.length;
+        renderAnalytics(latestBins, latestTrucks, latestReports, latestWorkers);
     });
 
     // --- 6. KPI UPDATES ---
@@ -256,6 +381,113 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function toDateSafe(ts) {
+        if (!ts) return null;
+        if (typeof ts.toDate === 'function') return ts.toDate();
+        if (typeof ts.toMillis === 'function') return new Date(ts.toMillis());
+        const parsed = new Date(ts);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function distributeRouteBins(workers, bins) {
+        const assignedWorkers = workers
+            .filter(w => !!w.truckId)
+            .sort((a, b) => String(a.truckId).localeCompare(String(b.truckId)));
+        const routeByWorkerId = {};
+        assignedWorkers.forEach(w => { routeByWorkerId[w.id] = []; });
+        if (!assignedWorkers.length) return routeByWorkerId;
+
+        const pendingBins = bins
+            .filter(b => (b.status || 'active') !== 'collected')
+            .sort((a, b) => {
+                const scoreA = (Number(a.fillLevel) || 0) + ((a.status || '').toLowerCase() === 'critical' ? 25 : 0);
+                const scoreB = (Number(b.fillLevel) || 0) + ((b.status || '').toLowerCase() === 'critical' ? 25 : 0);
+                return scoreB - scoreA;
+            });
+
+        pendingBins.forEach((bin, idx) => {
+            const worker = assignedWorkers[idx % assignedWorkers.length];
+            routeByWorkerId[worker.id].push(bin);
+        });
+        return routeByWorkerId;
+    }
+
+    function renderAnalytics(bins, trucks, reports, workers) {
+        const openReports = reports.filter(r => r.status === 'open').length;
+        const criticalBins = bins.filter(b => Number(b.fillLevel) >= 80).length;
+
+        const binsEl = document.getElementById('analytics-bins');
+        const criticalEl = document.getElementById('analytics-critical');
+        const trucksEl = document.getElementById('analytics-trucks');
+        const reportsEl = document.getElementById('analytics-reports');
+        if (binsEl) binsEl.textContent = bins.length;
+        if (criticalEl) criticalEl.textContent = criticalBins;
+        if (trucksEl) trucksEl.textContent = trucks.length;
+        if (reportsEl) reportsEl.textContent = openReports;
+
+        const now = new Date();
+        const dayKeys = [];
+        const byDay = {};
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            dayKeys.push(key);
+            byDay[key] = 0;
+        }
+
+        bins.forEach(bin => {
+            const collectedAt = toDateSafe(bin.lastCollected);
+            if (!collectedAt) return;
+            const key = collectedAt.toISOString().slice(0, 10);
+            if (Object.prototype.hasOwnProperty.call(byDay, key)) byDay[key] += 1;
+        });
+
+        const chart = document.getElementById('analytics-waste-chart');
+        if (chart) {
+            const maxVal = Math.max(...dayKeys.map(k => byDay[k]), 1);
+            chart.innerHTML = dayKeys.map(key => {
+                const value = byDay[key];
+                const height = Math.max(10, Math.round((value / maxVal) * 100));
+                return `
+                    <div class="flex-1 h-full flex flex-col justify-end items-center gap-2">
+                        <div class="w-full rounded-t-md bg-primary/75 hover:bg-primary transition-all" style="height:${height}%"></div>
+                        <p class="text-[11px] text-[#95a89f]">${key.slice(5)}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        const efficiencyList = document.getElementById('analytics-efficiency-list');
+        if (efficiencyList) {
+            if (!workers.length) {
+                efficiencyList.innerHTML = '<div class="h-full w-full text-center text-[#a5b6a0] flex items-center justify-center text-sm">No worker profiles yet.</div>';
+            } else {
+                const routeByWorkerId = distributeRouteBins(workers, bins);
+                efficiencyList.innerHTML = workers.map(w => {
+                    const assigned = routeByWorkerId[w.id] || [];
+                    const completed = bins.filter(b => (b.collectedBy || '').toLowerCase() === (w.email || '').toLowerCase()).length;
+                    const total = assigned.length + completed;
+                    const efficiency = total > 0 ? Math.round((completed / total) * 100) : 0;
+                    return `
+                        <div class="border border-white/10 rounded-xl p-3 mb-3 bg-black/20">
+                            <div class="flex items-center justify-between">
+                                <p class="font-semibold text-white">${w.name || w.email || w.id}</p>
+                                <span class="text-xs text-primary font-bold">${efficiency}%</span>
+                            </div>
+                            <p class="text-xs text-[#9ab0a7] mt-1">Truck: ${w.truckId || 'N/A'}</p>
+                            <p class="text-xs text-[#9ab0a7]">Assigned stops: ${assigned.length}</p>
+                            <div class="w-full h-2 rounded-full bg-white/10 mt-2 overflow-hidden">
+                                <div class="h-full bg-primary" style="width:${efficiency}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+    }
+
     // Listen for reports 
     let initialReportsLoaded = false;
     SurgeDB.onReports((reports) => {
@@ -265,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         populateCitizenReports(reports);
         updateReportMarkers(reports, dashboardMap, reportMarkers);
         if (fullMap) updateReportMarkers(reports, fullMap, reportMarkersF);
+        renderAnalytics(latestBins, latestTrucks, latestReports, latestWorkers);
 
         // Fly to newest open report if this isn't the initial page load
         if (initialReportsLoaded && openReports.length > 0) {
@@ -287,6 +520,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const workers = await SurgeDB.getWorkers();
             const trucks = await SurgeDB.getTrucks();
+            const bins = await SurgeDB.getBins();
+            latestWorkers = workers;
             const tableBody = document.getElementById('worker-table-body');
             if (!tableBody) return;
 
@@ -308,18 +543,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tr>
                 `).join('');
             } else {
+                const routeByWorkerId = distributeRouteBins(workers, bins);
                 tableBody.innerHTML = workers.map(w => {
-                    const truck = trucks.find(t => t.driverUid === w.id);
+                    const truck = trucks.find(t => t.id === w.truckId) || trucks.find(t => t.driverUid === w.id);
+                    const liveTruck = latestTrucks.find(t => t.id === w.truckId);
+                    const assignedBins = routeByWorkerId[w.id] || [];
+                    const routeLabel = w.truckId
+                        ? (assignedBins.length ? `${assignedBins.length} stops (AI)` : (truck?.route || 'Standby'))
+                        : 'Unassigned';
+                    const vehicleId = truck?.vehicleNumber || liveTruck?.vehicleNumber || w.truckId || 'N/A';
+                    const collected = bins.filter(b => (b.collectedBy || '').toLowerCase() === (w.email || '').toLowerCase()).length;
+                    const total = assignedBins.length + collected;
+                    const efficiency = total > 0 ? Math.round((collected / total) * 100) : 0;
+                    const isOnline = !!liveTruck;
                     return `
                         <tr>
                             <td class="font-medium">${w.name || w.email}</td>
-                            <td><span class="status-badge online">Online</span></td>
-                            <td>${truck ? truck.vehicleNumber : 'N/A'}</td>
-                            <td>${truck ? truck.route : 'Unassigned'}</td>
-                            <td class="text-primary">--</td>
+                            <td><span class="status-badge ${isOnline ? 'online' : 'offline'}">${isOnline ? 'Online' : 'Offline'}</span></td>
+                            <td>${vehicleId}</td>
+                            <td>${routeLabel}</td>
+                            <td class="${efficiency >= 70 ? 'text-primary' : 'text-amber-400'}">${efficiency}%</td>
                         </tr>`;
                 }).join('');
             }
+            renderAnalytics(latestBins, latestTrucks, latestReports, latestWorkers);
         } catch (e) {
             console.error('[SURGE] Worker fetch error:', e);
         }
@@ -331,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
 
         if (reports.length === 0) {
-            container.innerHTML = '<p class="text-[#a5b6a0] col-span-3 text-center py-12">No reports yet. Seed demo data to get started.</p>';
+            container.innerHTML = '<p class="text-[#a5b6a0] col-span-3 text-center py-12">No reports yet. Live reports will appear here.</p>';
             return;
         }
 
@@ -392,9 +639,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+
+    // --- 9B. REMOVE SEEDED DATA ---
+    const clearSeedBtn = document.getElementById('clear-seed-data-btn');
+    if (clearSeedBtn) {
+        clearSeedBtn.addEventListener('click', async () => {
+            clearSeedBtn.textContent = 'Removing...';
+            clearSeedBtn.disabled = true;
+            try {
+                await SurgeDB.clearSeededData();
+                clearSeedBtn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span>Seed Data Removed';
+                setTimeout(() => {
+                    clearSeedBtn.innerHTML = '<span class="material-symbols-outlined text-sm">delete_sweep</span>Remove Seeded Data';
+                    clearSeedBtn.disabled = false;
+                }, 3000);
+            } catch (e) {
+                console.error('[SURGE] Clear seed error:', e);
+                clearSeedBtn.textContent = 'Error - Check Console';
+                clearSeedBtn.disabled = false;
+            }
+        });
+    }
     // --- 10. INITIAL LOAD ---
     populateWorkerManagement();
 
     // Invalidate map size after a short delay (fixes rendering issues)
     setTimeout(() => dashboardMap.invalidateSize(), 300);
 });
+

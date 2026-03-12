@@ -1,6 +1,19 @@
 // Firebase config for React Native (using modular SDK)
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set } from 'firebase/database';
+import { getDatabase, ref, set, onValue } from 'firebase/database';
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    addDoc,
+    doc,
+    setDoc,
+    updateDoc,
+    serverTimestamp,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: "AIzaSyAuf0ZxDFuSY2r-cJ_7k9CsIZd5JpnBfEc",
@@ -14,8 +27,26 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+const firestore = getFirestore(app);
 
 // Use set(ref, null) for delete so stop handlers work even if remove() isn't available.
 const removeData = (dbRef) => set(dbRef, null);
 
-export { database, ref, set, removeData };
+export {
+    database,
+    firestore,
+    ref,
+    set,
+    onValue,
+    removeData,
+    collection,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    addDoc,
+    doc,
+    setDoc,
+    updateDoc,
+    serverTimestamp,
+};

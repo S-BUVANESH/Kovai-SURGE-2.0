@@ -1,58 +1,172 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    SafeAreaView,
+    ScrollView,
+    Animated,
+} from 'react-native';
 
-export default function HomeScreen({ navigation }) {
+const THEME_LABELS = {
+    neon: 'Neon',
+    ocean: 'Ocean',
+    sunset: 'Sunset',
+    military: 'Ops',
+};
+
+export default function HomeScreen({ navigation, theme, themeKey, setThemeKey, themes }) {
+    const pulse = useRef(new Animated.Value(0)).current;
+    const introY = useRef(new Animated.Value(28)).current;
+    const introOpacity = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulse, { toValue: 1, duration: 2300, useNativeDriver: true }),
+                Animated.timing(pulse, { toValue: 0, duration: 2300, useNativeDriver: true }),
+            ])
+        ).start();
+
+        Animated.parallel([
+            Animated.timing(introY, { toValue: 0, duration: 550, useNativeDriver: true }),
+            Animated.timing(introOpacity, { toValue: 1, duration: 520, useNativeDriver: true }),
+        ]).start();
+    }, [introOpacity, introY, pulse]);
+
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.logo}>KOVAI~SURGE</Text>
-                <Text style={styles.subtitle}>IoT Device Simulator</Text>
-                <Text style={styles.description}>
-                    Simulate smart waste management devices using your phone's GPS.
-                    Choose a mode below.
-                </Text>
-            </View>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}> 
+            <View style={[styles.bgOrbA, { backgroundColor: theme.orbA }]} />
+            <View style={[styles.bgOrbB, { backgroundColor: theme.orbB }]} />
+            <Animated.View
+                pointerEvents="none"
+                style={[
+                    styles.pulseRing,
+                    {
+                        opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.45] }),
+                        transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.08] }) }],
+                        borderColor: theme.border,
+                    },
+                ]}
+            />
 
-            <View style={styles.cardsContainer}>
-                <TouchableOpacity
-                    style={[styles.card, styles.dustbinCard]}
-                    onPress={() => navigation.navigate('DustbinSimulator')}
-                    activeOpacity={0.8}
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <Animated.View
+                    style={[
+                        styles.header,
+                        { backgroundColor: theme.panel, borderColor: theme.border },
+                        { opacity: introOpacity, transform: [{ translateY: introY }] },
+                    ]}
                 >
-                    <Text style={styles.cardEmoji}>🗑️</Text>
-                    <Text style={styles.cardTitle}>Dustbin Simulator</Text>
-                    <Text style={styles.cardDesc}>
-                        Simulate a smart dustbin with GPS location and adjustable fill level sensor
+                    <Text style={[styles.kicker, { color: theme.accent }]}>CONTROL DECK</Text>
+                    <Text style={styles.logo}>KOVAI SURGE</Text>
+                    <Text style={[styles.subtitle, { color: theme.text }]}>Smart Waste Device Simulator</Text>
+                    <Text style={styles.description}>
+                        Simulate bin and truck telemetry with live GPS and push updates directly to the admin maps.
                     </Text>
-                    <View style={styles.cardBadge}>
-                        <Text style={styles.cardBadgeText}>Phone = Dustbin</Text>
-                    </View>
-                </TouchableOpacity>
+                </Animated.View>
 
-                <TouchableOpacity
-                    style={[styles.card, styles.truckCard]}
-                    onPress={() => navigation.navigate('TruckSimulator')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.cardEmoji}>🚛</Text>
-                    <Text style={styles.cardTitle}>Truck Simulator</Text>
-                    <Text style={styles.cardDesc}>
-                        Simulate a waste collection truck with continuous GPS tracking as you move
+                <View style={[styles.themeRow, { backgroundColor: theme.panel, borderColor: theme.border }]}>
+                    <Text style={styles.themeLabel}>Theme</Text>
+                    <View style={styles.themeButtons}>
+                        {Object.keys(themes).map((key) => (
+                            <TouchableOpacity
+                                key={key}
+                                style={[
+                                    styles.themeBtn,
+                                    {
+                                        borderColor: key === themeKey ? theme.accent : theme.border,
+                                        backgroundColor: key === themeKey ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.2)',
+                                    },
+                                ]}
+                                onPress={() => setThemeKey(key)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.themeBtnText,
+                                        { color: key === themeKey ? theme.accent : '#b8c8c3' },
+                                    ]}
+                                >
+                                    {THEME_LABELS[key]}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                <View style={styles.cardsContainer}>
+                    <TouchableOpacity
+                        style={[
+                            styles.card,
+                            { backgroundColor: theme.binCard, borderColor: theme.border },
+                        ]}
+                        onPress={() => navigation.navigate('DustbinSimulator')}
+                        activeOpacity={0.88}
+                    >
+                        <View style={[styles.cardLight, { backgroundColor: theme.accent }]} />
+                        <View style={styles.cardTopRow}>
+                            <Text style={styles.cardTag}>BIN</Text>
+                            <View style={[styles.cardBadge, { borderColor: theme.accent }]}>
+                                <Text style={[styles.cardBadgeText, { color: theme.accent }]}>Phone to Bin</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.cardTitle}>Dustbin Simulator</Text>
+                        <Text style={styles.cardDesc}>
+                            Fill-level sensor emulation with auto-fill mode and location beacon updates.
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.card,
+                            { backgroundColor: theme.truckCard, borderColor: theme.border },
+                        ]}
+                        onPress={() => navigation.navigate('TruckSimulator')}
+                        activeOpacity={0.88}
+                    >
+                        <View style={[styles.cardLight, { backgroundColor: theme.accentAlt }]} />
+                        <View style={styles.cardTopRow}>
+                            <Text style={styles.cardTag}>TRK</Text>
+                            <View style={[styles.cardBadge, { borderColor: theme.accentAlt }]}>
+                                <Text style={[styles.cardBadgeText, { color: theme.accentAlt }]}>Phone to Truck</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.cardTitle}>Truck Simulator</Text>
+                        <Text style={styles.cardDesc}>
+                            Continuous GPS, speed and heading stream for live movement on admin tracking maps.
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.card,
+                            { backgroundColor: theme.panel, borderColor: theme.border },
+                        ]}
+                        onPress={() => navigation.navigate('WorkerOps')}
+                        activeOpacity={0.88}
+                    >
+                        <View style={[styles.cardLight, { backgroundColor: theme.text }]} />
+                        <View style={styles.cardTopRow}>
+                            <Text style={styles.cardTag}>OPS</Text>
+                            <View style={[styles.cardBadge, { borderColor: theme.text }]}>
+                                <Text style={[styles.cardBadgeText, { color: theme.text }]}>Driver Workflow</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.cardTitle}>Worker Ops</Text>
+                        <Text style={styles.cardDesc}>
+                            In-app route assignment, citizen reports, navigation and live bin collection sync.
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={[styles.footer, { backgroundColor: theme.panel, borderColor: theme.border }]}>
+                    <Text style={[styles.footerText, { color: theme.text }]}>Real-time Firebase telemetry enabled</Text>
+                    <Text style={styles.footerSubtext}>
+                        Keep admin dashboard open to monitor markers and movement.
                     </Text>
-                    <View style={[styles.cardBadge, { borderColor: '#3b82f6' }]}>
-                        <Text style={[styles.cardBadgeText, { color: '#3b82f6' }]}>Phone = Truck</Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                    ⚡ Data pushes to Firebase in real-time
-                </Text>
-                <Text style={styles.footerSubtext}>
-                    Open the admin dashboard on your computer to see live updates
-                </Text>
-            </View>
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
 }
@@ -60,92 +174,180 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0c1a0c',
-        padding: 24,
-        justifyContent: 'center',
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingTop: 24,
+        paddingBottom: 28,
+        gap: 14,
+    },
+    bgOrbA: {
+        position: 'absolute',
+        width: 240,
+        height: 240,
+        borderRadius: 120,
+        top: -60,
+        left: -40,
+    },
+    bgOrbB: {
+        position: 'absolute',
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        bottom: -40,
+        right: -30,
+    },
+    pulseRing: {
+        position: 'absolute',
+        top: 34,
+        alignSelf: 'center',
+        width: 280,
+        height: 120,
+        borderRadius: 28,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderWidth: 1,
     },
     header: {
+        borderWidth: 1,
+        borderRadius: 24,
+        padding: 20,
         alignItems: 'center',
-        marginBottom: 40,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 18,
+        elevation: 10,
+    },
+    kicker: {
+        letterSpacing: 3,
+        fontSize: 11,
+        fontWeight: '700',
     },
     logo: {
-        fontSize: 32,
+        marginTop: 8,
+        fontSize: 34,
         fontWeight: '900',
         color: '#fff',
-        letterSpacing: 4,
+        letterSpacing: 2,
     },
     subtitle: {
-        fontSize: 14,
-        color: '#53d22d',
+        fontSize: 13,
         fontWeight: '600',
-        letterSpacing: 3,
+        letterSpacing: 1.4,
         marginTop: 4,
     },
     description: {
-        fontSize: 14,
-        color: '#a5b6a0',
+        fontSize: 13,
+        color: '#b4cbc2',
         textAlign: 'center',
-        marginTop: 16,
-        lineHeight: 20,
-        paddingHorizontal: 20,
+        marginTop: 14,
+        lineHeight: 19,
     },
-    cardsContainer: {
-        gap: 16,
-    },
-    card: {
-        borderRadius: 20,
-        padding: 24,
+    themeRow: {
         borderWidth: 1,
+        borderRadius: 16,
+        padding: 12,
     },
-    dustbinCard: {
-        backgroundColor: 'rgba(83, 210, 45, 0.05)',
-        borderColor: 'rgba(83, 210, 45, 0.2)',
-    },
-    truckCard: {
-        backgroundColor: 'rgba(59, 130, 246, 0.05)',
-        borderColor: 'rgba(59, 130, 246, 0.2)',
-    },
-    cardEmoji: {
-        fontSize: 48,
-        marginBottom: 12,
-    },
-    cardTitle: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: '#fff',
+    themeLabel: {
+        color: '#b7c9c3',
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 1.4,
         marginBottom: 8,
     },
-    cardDesc: {
-        fontSize: 13,
-        color: '#a5b6a0',
-        lineHeight: 18,
-        marginBottom: 12,
+    themeButtons: {
+        flexDirection: 'row',
+        gap: 8,
     },
-    cardBadge: {
-        alignSelf: 'flex-start',
+    themeBtn: {
         paddingHorizontal: 12,
-        paddingVertical: 4,
+        paddingVertical: 7,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: '#53d22d',
+    },
+    themeBtnText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    cardsContainer: {
+        gap: 14,
+    },
+    card: {
+        borderRadius: 22,
+        padding: 20,
+        borderWidth: 1,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.24,
+        shadowRadius: 14,
+        elevation: 8,
+    },
+    cardTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    cardLight: {
+        position: 'absolute',
+        top: -42,
+        right: -28,
+        width: 118,
+        height: 118,
+        opacity: 0.22,
+        borderRadius: 59,
+    },
+    cardTag: {
+        fontSize: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        overflow: 'hidden',
+        color: '#d9fff2',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        fontWeight: '800',
+        letterSpacing: 1.2,
+    },
+    cardTitle: {
+        marginTop: 14,
+        fontSize: 21,
+        fontWeight: '800',
+        color: '#fff',
+        marginBottom: 7,
+    },
+    cardDesc: {
+        fontSize: 13.5,
+        color: '#b5cdc4',
+        lineHeight: 18,
+    },
+    cardBadge: {
+        paddingHorizontal: 11,
+        paddingVertical: 5,
+        borderRadius: 999,
+        borderWidth: 1,
+        backgroundColor: 'rgba(10, 20, 17, 0.5)',
     },
     cardBadgeText: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#53d22d',
     },
     footer: {
-        marginTop: 40,
+        marginTop: 4,
+        borderRadius: 16,
+        borderWidth: 1,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
         alignItems: 'center',
     },
     footerText: {
-        color: '#53d22d',
-        fontSize: 13,
-        fontWeight: '600',
+        fontSize: 12.5,
+        fontWeight: '700',
+        letterSpacing: 0.3,
     },
     footerSubtext: {
-        color: '#666',
+        color: '#8aa299',
         fontSize: 11,
         marginTop: 4,
+        textAlign: 'center',
     },
 });

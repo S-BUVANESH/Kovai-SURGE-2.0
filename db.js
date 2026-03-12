@@ -202,5 +202,27 @@ const SurgeDB = {
         await batch.commit();
         console.log('[SURGE] Demo data seeded successfully!');
         return true;
+    },
+
+    async clearSeededData() {
+        const batch = db.batch();
+
+        for (let i = 1; i <= 10; i++) {
+            const binId = `bin_${String(i).padStart(3, '0')}`;
+            batch.delete(db.collection('bins').doc(binId));
+        }
+
+        for (let i = 1; i <= 3; i++) {
+            batch.delete(db.collection('trucks').doc(`truck_${i}`));
+            batch.delete(db.collection('reports').doc(`report_${i}`));
+        }
+
+        await batch.commit();
+        await rtdb.ref('live/bins').set(null);
+        await rtdb.ref('live/trucks').set(null);
+
+        console.log('[SURGE] Seeded demo data removed.');
+        return true;
     }
 };
+

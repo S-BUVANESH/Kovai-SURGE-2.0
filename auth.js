@@ -6,6 +6,12 @@
 // ============================================================
 
 const SurgeAuth = {
+    // Built-in demo worker credential for quick website access
+    demoWorker: {
+        email: 'worker01@td.in',
+        password: 'Worker@123',
+        uid: 'demo_worker_01'
+    },
 
     // Determine role from email domain
     getRole(email) {
@@ -29,6 +35,23 @@ const SurgeAuth = {
     // Login with email and password
     async login(email, password) {
         try {
+            // Allow quick worker login without requiring account creation in Firebase Auth
+            const normalizedEmail = email.trim().toLowerCase();
+            if (
+                normalizedEmail === this.demoWorker.email &&
+                password === this.demoWorker.password
+            ) {
+                const role = 'worker';
+                sessionStorage.setItem('userEmail', this.demoWorker.email);
+                sessionStorage.setItem('userRole', role);
+                sessionStorage.setItem('userUid', this.demoWorker.uid);
+                return {
+                    user: { uid: this.demoWorker.uid, email: this.demoWorker.email },
+                    role,
+                    demo: true
+                };
+            }
+
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             const role = this.getRole(email);
             if (!role) {
