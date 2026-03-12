@@ -17,6 +17,8 @@
       }
     },
     "android": {
+      "package": "com.sbuvanesh.surgesimulator",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0c1a0c"
       },
