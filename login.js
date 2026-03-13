@@ -43,7 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Validate email domain
         const role = SurgeAuth.getRole(email);
         if (!role) {
-            showToast('Access Denied: Your email domain is not authorized. Use @ad.in, @td.in, or @gmail.com');
+            if (email.endsWith('@td.in')) {
+                showToast('Worker login is moved to the mobile app. Use Worker Ops there.');
+            } else {
+                showToast('Access Denied: Use @ad.in or @gmail.com on web.');
+            }
             return;
         }
 
@@ -52,10 +56,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const result = await SurgeAuth.login(email, password);
             showToast(`Welcome! Redirecting to ${result.role} dashboard...`, 'success');
+            const target = SurgeAuth.getDashboardUrl(result.role);
+
+            if (!target) {
+                throw new Error('Unable to resolve dashboard route for this account.');
+            }
             
             setTimeout(() => {
-                window.location.href = SurgeAuth.getDashboardUrl(result.role);
+                window.location.href = target;
             }, 800);
+
+            // If redirect does not happen for any reason, release the button state.
+            setTimeout(() => {
+                setLoading(false);
+            }, 2500);
         } catch (error) {
             showToast(error.message);
             setLoading(false);

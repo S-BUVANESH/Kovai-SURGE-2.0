@@ -2,22 +2,14 @@
 // KOVAI~SURGE Authentication Module
 // ============================================================
 // Uses Firebase Auth for login/register/logout
-// Role determined by email domain: @ad.in=admin, @td.in=worker, @gmail.com=citizen
+// Role determined by email domain: @ad.in=admin, @gmail.com=citizen
 // ============================================================
 
 const SurgeAuth = {
-    // Built-in demo worker credential for quick website access
-    demoWorker: {
-        email: 'worker01@td.in',
-        password: 'Worker@123',
-        uid: 'demo_worker_01'
-    },
-
     // Determine role from email domain
     getRole(email) {
         email = email.toLowerCase();
         if (email.endsWith('@ad.in')) return 'admin';
-        if (email.endsWith('@td.in')) return 'worker';
         if (email.endsWith('@gmail.com')) return 'citizen';
         return null;
     },
@@ -26,7 +18,6 @@ const SurgeAuth = {
     getDashboardUrl(role) {
         const dashboards = {
             admin: 'admin-dashboard.html',
-            worker: 'worker-dashboard.html',
             citizen: 'citizen-dashboard.html'
         };
         return dashboards[role] || null;
@@ -35,31 +26,17 @@ const SurgeAuth = {
     // Login with email and password
     async login(email, password) {
         try {
-            // Allow quick worker login without requiring account creation in Firebase Auth
             const normalizedEmail = email.trim().toLowerCase();
-            if (
-                normalizedEmail === this.demoWorker.email &&
-                password === this.demoWorker.password
-            ) {
-                const role = 'worker';
-                sessionStorage.setItem('userEmail', this.demoWorker.email);
-                sessionStorage.setItem('userRole', role);
-                sessionStorage.setItem('userUid', this.demoWorker.uid);
-                return {
-                    user: { uid: this.demoWorker.uid, email: this.demoWorker.email },
-                    role,
-                    demo: true
-                };
+            const role = this.getRole(normalizedEmail);
+            if (!role) {
+                throw new Error('Use @ad.in or @gmail.com on web. Worker login is available only in the mobile app.');
             }
 
-            const userCredential = await auth.signInWithEmailAndPassword(email, password);
-            const role = this.getRole(email);
-            if (!role) {
-                await auth.signOut();
-                throw new Error('Your email domain is not authorized for this system.');
-            }
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            const userCredential = await auth.signInWithEmailAndPassword(normalizedEmail, password);
             // Store session info
-            sessionStorage.setItem('userEmail', email);
+            sessionStorage.setItem('isDemoUser', '0');
+            sessionStorage.setItem('userEmail', normalizedEmail);
             sessionStorage.setItem('userRole', role);
             sessionStorage.setItem('userUid', userCredential.user.uid);
             return { user: userCredential.user, role };
@@ -113,9 +90,11 @@ const SurgeAuth = {
         const userUid = sessionStorage.getItem('userUid');
 
         if (!userEmail || !userUid || userRole !== requiredRole) {
+            sessionStorage.removeItem('isDemoUser');
             window.location.href = 'index.html';
             return null;
         }
+
         return { email: userEmail, role: userRole, uid: userUid };
     },
 
@@ -128,7 +107,10 @@ const SurgeAuth = {
             'auth/weak-password': 'Password must be at least 6 characters.',
             'auth/invalid-email': 'Please enter a valid email address.',
             'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
-            'auth/invalid-credential': 'Invalid email or password. Please check and try again.'
+            'auth/invalid-credential': 'Invalid email or password. Please check and try again.',
+            'auth/network-request-failed': 'Network issue while contacting Firebase. Check internet and try again.',
+            'permission-denied': 'Firebase access denied. Check Firestore/RTDB security rules for this user.',
+            'unavailable': 'Firebase service is temporarily unavailable. Please retry in a moment.'
         };
         const message = messages[error.code] || error.message || 'An unexpected error occurred.';
         return new Error(message);

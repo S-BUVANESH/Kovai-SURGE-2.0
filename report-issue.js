@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedLocation = null;
     let selectedIndex = -1;
     let currentSuggestions = [];
-    const pendingRewardKey = `surge_pending_reward_${user.uid}`;
+    const normalizedUserEmail = (user.email || sessionStorage.getItem('userEmail') || '').trim().toLowerCase();
+    const pendingRewardKey = `surge_pending_reward_${normalizedUserEmail || user.uid}`;
+    const legacyPendingRewardKey = `surge_pending_reward_${user.uid}`;
 
     // --- Toast ---
     function showToast(message, type = 'success') {
@@ -22,14 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function queuePendingReward(reward) {
         try {
-            const existing = JSON.parse(localStorage.getItem(pendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+            const existingCurrent = JSON.parse(localStorage.getItem(pendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+            const existingLegacy = JSON.parse(localStorage.getItem(legacyPendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
             const merged = {
-                points: (existing.points || 0) + (reward.points || 0),
-                recycledItems: (existing.recycledItems || 0) + (reward.recycledItems || 0),
-                wasteReduced: (existing.wasteReduced || 0) + (reward.wasteReduced || 0),
-                email: user.email,
+                points: (existingCurrent.points || 0) + (existingLegacy.points || 0) + (reward.points || 0),
+                recycledItems: (existingCurrent.recycledItems || 0) + (existingLegacy.recycledItems || 0) + (reward.recycledItems || 0),
+                wasteReduced: (existingCurrent.wasteReduced || 0) + (existingLegacy.wasteReduced || 0) + (reward.wasteReduced || 0),
+                email: normalizedUserEmail,
             };
             localStorage.setItem(pendingRewardKey, JSON.stringify(merged));
+            if (legacyPendingRewardKey !== pendingRewardKey) {
+                localStorage.removeItem(legacyPendingRewardKey);
+            }
         } catch (e) {
             console.warn('[SURGE] Pending reward queue failed', e);
         }
@@ -199,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const issueType = document.getElementById('issue-type').value;
         const location = locationInput.value;
         const comments = document.getElementById('issue-comments').value;
-        const userEmail = user.email || sessionStorage.getItem('userEmail') || 'anonymous';
+        const userEmail = normalizedUserEmail || 'anonymous';
 
         if (!location) {
             showToast('Please search and select a location.', 'error');
@@ -215,7 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: issueType,
                 location: location,
                 description: comments,
-                reportedBy: userEmail
+                reportedBy: userEmail,
+                reportedByUid: user.uid,
             };
 
             // Include coordinates if location was selected from search
@@ -227,9 +234,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await SurgeDB.submitReport(reportData);
             const reward = { points: 25, recycledItems: 1, wasteReduced: 2 };
-            let rewardSynced = true;
+            let rewardSynced = false;
             try {
-                await SurgeDB.applyCitizenReportReward(user.uid, userEmail, reward);
+                rewardSynced = await SurgeDB.applyCitizenReportReward(user.uid, userEmail, reward);
+                if (!rewardSynced) {
+                    queuePendingReward(reward);
+                }
             } catch (rewardError) {
                 rewardSynced = false;
                 queuePendingReward(reward);

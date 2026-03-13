@@ -7,7 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let greenPoints = 0;
     let recycledItems = 0;
     let wasteReduced = 0;
-    const pendingRewardKey = `surge_pending_reward_${user.uid}`;
+    const normalizedUserEmail = (user.email || '').trim().toLowerCase();
+    const pendingRewardKey = `surge_pending_reward_${normalizedUserEmail || user.uid}`;
+    const legacyPendingRewardKey = `surge_pending_reward_${user.uid}`;
 
     const rewards = [
         { name: 'Eco-Friendly Tote Bag', cost: 500, img: 'https://images.unsplash.com/photo-1591534461839-8e36e3a49717?w=400&h=300&fit=crop' },
@@ -18,7 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getPendingReward() {
         try {
-            return JSON.parse(localStorage.getItem(pendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+            const current = JSON.parse(localStorage.getItem(pendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+            const legacy = JSON.parse(localStorage.getItem(legacyPendingRewardKey) || '{"points":0,"recycledItems":0,"wasteReduced":0}');
+            return {
+                points: Number(current.points || 0) + Number(legacy.points || 0),
+                recycledItems: Number(current.recycledItems || 0) + Number(legacy.recycledItems || 0),
+                wasteReduced: Number(current.wasteReduced || 0) + Number(legacy.wasteReduced || 0),
+            };
         } catch (e) {
             return { points: 0, recycledItems: 0, wasteReduced: 0 };
         }
@@ -28,28 +36,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const pending = getPendingReward();
         if (!pending || (!pending.points && !pending.recycledItems && !pending.wasteReduced)) return;
         try {
-            await SurgeDB.applyCitizenReportReward(user.uid, user.email, pending);
-            localStorage.removeItem(pendingRewardKey);
+            const synced = await SurgeDB.applyCitizenReportReward(user.uid, user.email, pending);
+            if (synced) {
+                localStorage.removeItem(pendingRewardKey);
+                if (legacyPendingRewardKey !== pendingRewardKey) {
+                    localStorage.removeItem(legacyPendingRewardKey);
+                }
+            }
         } catch (e) {
             console.warn('[SURGE] Pending reward sync still pending', e);
         }
     }
 
     function renderBadge() {
+        const badgeNameEl = document.getElementById('badge-name');
+        const badgeProgressEl = document.getElementById('badge-progress');
+        const badgeProgressTextEl = document.getElementById('badge-progress-text');
+        if (!badgeNameEl || !badgeProgressEl || !badgeProgressTextEl) return;
+
         if (greenPoints >= 1000) {
-            document.getElementById('badge-name').textContent = 'GREEN CHAMPION';
-            document.getElementById('badge-progress').style.width = '100%';
-            document.querySelector('#badge-progress + p').textContent = 'Max badge reached!';
+            badgeNameEl.textContent = 'GREEN CHAMPION';
+            badgeProgressEl.style.width = '100%';
+            badgeProgressTextEl.textContent = 'Max badge reached!';
         } else if (greenPoints >= 500) {
-            document.getElementById('badge-name').textContent = 'ECO-WARRIOR';
+            badgeNameEl.textContent = 'ECO-WARRIOR';
             const progress = Math.round(((greenPoints - 500) / 500) * 100);
-            document.getElementById('badge-progress').style.width = progress + '%';
-            document.querySelector('#badge-progress + p').textContent = `${progress}% to Green Champion`;
+            badgeProgressEl.style.width = progress + '%';
+            badgeProgressTextEl.textContent = `${progress}% to Green Champion`;
         } else {
-            document.getElementById('badge-name').textContent = 'NEWCOMER';
+            badgeNameEl.textContent = 'NEWCOMER';
             const progress = Math.round((greenPoints / 500) * 100);
-            document.getElementById('badge-progress').style.width = progress + '%';
-            document.querySelector('#badge-progress + p').textContent = `${progress}% to Eco-Warrior`;
+            badgeProgressEl.style.width = progress + '%';
+            badgeProgressTextEl.textContent = `${progress}% to Eco-Warrior`;
         }
     }
 
@@ -58,8 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const userName = user.email.split('@')[0];
         document.getElementById('user-display-name').textContent = user.email;
         document.getElementById('welcome-message').textContent = `Welcome back, ${userName}!`;
-        let hasFirestoreStats = false;
-
         try {
             let userData = await SurgeDB.getUser(user.uid);
             if (!userData) {
@@ -69,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 greenPoints = Number(userData.greenPoints || 0);
                 recycledItems = Number(userData.recycledItems || 0);
                 wasteReduced = Number(userData.wasteReduced || 0);
-                hasFirestoreStats = true;
             }
         } catch (e) {
             console.log('[SURGE] Loading user data from Firestore failed, using fallback');
@@ -84,18 +99,21 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBadge();
         flushPendingReward();
 
-        // Fallback: if user stats doc is missing, derive baseline points from submitted reports.
-        if (!hasFirestoreStats) {
-            try {
-                const reports = await SurgeDB.getReports();
-                const myReports = reports.filter(r => (r.reportedBy || '').toLowerCase() === user.email.toLowerCase());
-                const derivedPoints = myReports.length * 25;
-                if (derivedPoints > greenPoints) greenPoints = derivedPoints;
-            } catch (e) {
-                console.log('[SURGE] Fallback report-based points unavailable');
-            }
+        // Fallback: derive minimum baseline points from submitted reports.
+        try {
+            const reports = await SurgeDB.getReportsByUser({ uid: user.uid, email: normalizedUserEmail });
+            const myReports = reports.filter(r => {
+                const byUid = (r.reportedByUid || '').trim() === user.uid;
+                const byEmail = (r.reportedBy || '').trim().toLowerCase() === normalizedUserEmail;
+                return byUid || byEmail;
+            });
+            const derivedPoints = myReports.length * 25;
+            if (derivedPoints > greenPoints) greenPoints = derivedPoints;
+        } catch (e) {
+            console.log('[SURGE] Fallback report-based points unavailable');
         }
 
+        renderBadge();
         await loadRealNotifications();
         setUpcomingCollection();
         updateDashboardStats();
@@ -111,8 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Get user's reports from Firestore
-            const reports = await SurgeDB.getReports();
-            const userReports = reports.filter(r => r.reportedBy === user.email);
+            const reports = await SurgeDB.getReportsByUser({ uid: user.uid, email: normalizedUserEmail });
+            const userReports = reports.filter(r => {
+                const byUid = (r.reportedByUid || '').trim() === user.uid;
+                const byEmail = (r.reportedBy || '').trim().toLowerCase() === normalizedUserEmail;
+                return byUid || byEmail;
+            });
 
             userReports.forEach(r => {
                 notifications.push({
@@ -246,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (greenPoints >= cost) {
             greenPoints -= cost;
+            renderBadge();
             updatePointsBalance();
             animateValue('stat-points', greenPoints + cost, greenPoints, 500);
             e.target.textContent = 'Redeemed! ✓';
